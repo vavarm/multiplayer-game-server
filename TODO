@@ -1,0 +1,6 @@
+Project:
+- Test Joining Room with client
+- Create methods to send a message, write a debug message in console, ...
+- Create multiple clients
+- Clean the method that sending numbers over time
+- Clean the code
