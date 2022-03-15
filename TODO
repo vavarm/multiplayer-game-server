@@ -1,6 +1,5 @@
 Project:
 - Test Joining Room with client
-- Create methods to send a message, write a debug message in console, ...
 - Create multiple clients
 - choice entry method to let the client chooses between create or join a room
 - Clean the method that sending numbers over time

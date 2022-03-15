@@ -25,8 +25,8 @@ wss.on("connection", function connection(client) {
     var currentClient = playersData["" + client.id];
 
     //Send default client data back to client for reference
-    str = `id: ${client.id}`;
-    SendMessage(client, str);
+    //str = `id: ${client.id}`;
+    //SendMessage(client, str);
 
     //Method retrieves message from client
     client.on("message", (data) => {
@@ -35,6 +35,7 @@ wss.on("connection", function connection(client) {
         //Client creates a room
         if (dataJSON.topic == "CreateRoom") {
             PrintDebug("Creating a room");
+            //check if the room name is already used or not
             if (
                 roomsList
                 .map(function(e) {
@@ -42,15 +43,17 @@ wss.on("connection", function connection(client) {
                 })
                 .indexOf(dataJSON.name) == -1
             ) {
+                //create the room
                 room = new Room(dataJSON.name, dataJSON.pwd);
                 room.addPlayer(client.id);
                 roomsList.push(room);
-                //Debug room
+
                 PrintDebug(room.name);
                 PrintDebug(room.pwd);
                 PrintDebug(room.info());
                 PrintDebug(room.playersList.toString());
 
+                //send room information to the client
                 var str =
                     "Room created: " +
                     room.info() +
@@ -64,24 +67,26 @@ wss.on("connection", function connection(client) {
             }
         }
         //Client joins a room
-        // TODO - test this method
         else if (dataJSON.topic == "JoinRoom") {
+            //check if the room exists
             var index = roomsList
                 .map(function(e) {
                     return e.name;
                 })
                 .indexOf(dataJSON.name);
             if (index != -1) {
-                room = roomLists.index;
+                room = roomsList[index];
                 if (dataJSON.pwd == room.pwd) {
                     room.playersList.push(client.id);
+
+                    //send room information to the client
                     var str =
                         "Room joined: " +
-                        room.toString() +
+                        room.info() +
                         " / By: " +
                         client.id +
                         " / Players: " +
-                        room.getPlayersList.toString();
+                        room.getPlayersList().toString();
                     SendMessage(client, str);
                 } else {
                     SendMessage(client, "Wrong Password");
@@ -90,20 +95,31 @@ wss.on("connection", function connection(client) {
                 SendMessage(client, "The room doesn't exist");
             }
         }
-        //Client sends a simple message
+        //Simple message from client
         else {
             console.log("Player Message");
             console.log(dataJSON);
         }
     });
 
-    //Method notifies when client disconnects
+    //On client disconnection
     client.on("close", () => {
-        console.log("This Connection Closed!");
-        console.log("Removing Client: " + client.id);
+        console.log("A client has disconnected");
+        PrintDebug("Removing Client: " + client.id);
+        //remove client from the playersList of the room and check if a room is empty (in that case delete the room)
+        roomsList.forEach((room) => {
+            if (room.getPlayersList().includes(client.id))
+                room
+                .getPlayersList()
+                .splice(room.getPlayersList().indexOf(client.id), 1);
+            if (room.getPlayersList().length == 0) {
+                roomsList.splice(roomsList.indexOf(room), 1);
+            }
+        });
     });
 });
 
+//Start server method
 wss.on("listening", () => {
     console.log("listening on 8080");
 });
