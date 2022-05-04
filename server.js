@@ -44,7 +44,11 @@ wss.on("connection", function connection(client) {
                 PrintDebug2(room.name);
                 PrintDebug2(room.pwd);
                 PrintDebug2(room.info());
-                PrintDebug2(room.getClients().toString());
+                PrintDebug2(
+                    room.getClients().map(function(e) {
+                        return e.id;
+                    })
+                );
 
                 //send room information to the client
                 var str =
@@ -53,7 +57,9 @@ wss.on("connection", function connection(client) {
                     " / By: " +
                     client.id +
                     " / Clients: " +
-                    room.getClients().toString();
+                    room.getClients().map(function(e) {
+                        return e.id;
+                    });
                 SendMessage(client, str);
             } else {
                 SendMessage(client, "The name of the new room is already used");
@@ -79,7 +85,9 @@ wss.on("connection", function connection(client) {
                         " / By: " +
                         client.id +
                         " / Clients: " +
-                        room.getClients().toString();
+                        room.getClients().map(function(e) {
+                            return e.id;
+                        });
                     SendMessage(client, str);
                 } else {
                     SendMessage(client, "Wrong Password");
@@ -92,6 +100,16 @@ wss.on("connection", function connection(client) {
         else if (dataJSON.topic == "BcMsg") {
             console.log("Client's Broadcast Message");
             console.log(dataJSON.BcMsg);
+            rooms.forEach((room) => {
+                var index = room.getClients().indexOf(client);
+                PrintDebug1(index);
+                if (index != -1) {
+                    room.getClients().forEach((c) => {
+                        SendMessage(c, dataJSON.BcMsg);
+                        PrintDebug1("Message sent");
+                    });
+                }
+            });
         }
     });
 
