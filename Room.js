@@ -1,14 +1,15 @@
 module.exports = class Room {
     name;
     pwd;
-    playersList = [];
+    clients = [];
+
     constructor(name, pwd) {
         this.name = name;
         this.pwd = pwd;
     }
 
-    addPlayer(id) {
-        this.playersList.push(id);
+    addClient(id) {
+        this.clients.push(id);
     }
 
     info() {
@@ -16,7 +17,7 @@ module.exports = class Room {
         return str;
     }
 
-    getPlayersList() {
-        return this.playersList;
+    getClients() {
+        return this.clients;
     }
 };
