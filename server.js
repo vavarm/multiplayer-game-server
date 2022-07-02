@@ -17,13 +17,9 @@ wss.on("connection", function connection(client) {
 
     PrintDebug2(`Client ${client.id} Connected!`);
 
-    //Send default client data back to client for reference
-    //str = `id: ${client.id}`;
-    //SendMessage(client, str);
-
     //Method retrieves message from client
     client.on("message", (data) => {
-        //parse data to analyse it
+        //parse data to analyze it
         var dataJSON = JSON.parse(data);
         //Client creates a room
         if (dataJSON.topic == "CreateRoom") {
@@ -38,6 +34,8 @@ wss.on("connection", function connection(client) {
             ) {
                 //create the room
                 room = new Room(dataJSON.name, dataJSON.pwd);
+
+                client.username = dataJSON.username;
                 room.addClient(client);
                 rooms.push(room);
 
@@ -60,9 +58,16 @@ wss.on("connection", function connection(client) {
                     room.getClients().map(function(e) {
                         return e.id;
                     });
-                SendMessage(client, str);
+                var topic = "room";
+                SendMessage(client, topic, str);
             } else {
-                SendMessage(client, "The name of the new room is already used");
+                var topic = "issue";
+                SendMessage(
+                    client,
+                    topic,
+                    "The name of the new room is already used",
+                    "rnau"
+                );
             }
         }
         //Client joins a room
@@ -76,36 +81,60 @@ wss.on("connection", function connection(client) {
             if (index != -1) {
                 room = rooms[index];
                 if (dataJSON.pwd == room.pwd) {
-                    room.addClient(client);
+                    if (
+                        room
+                        .getClients()
+                        .map(function(e) {
+                            return e.username;
+                        })
+                        .indexOf(dataJSON.username) == -1
+                    ) {
+                        client.username = dataJSON.username;
+                        room.addClient(client);
 
-                    //send room information to the client
-                    var str =
-                        "Room joined: " +
-                        room.info() +
-                        " / By: " +
-                        client.id +
-                        " / Clients: " +
-                        room.getClients().map(function(e) {
-                            return e.id;
-                        });
-                    SendMessage(client, str);
+                        //send room information to the client
+                        var str =
+                            "Room joined: " +
+                            room.info() +
+                            " / By: " +
+                            client.id +
+                            " / Clients: " +
+                            room.getClients().map(function(e) {
+                                return e.id;
+                            });
+                        var topic = "room";
+                        SendMessage(client, topic, str);
+                    } else {
+                        var topic = "issue";
+                        SendMessage(
+                            client,
+                            topic,
+                            "The username is already used in the room",
+                            "uau"
+                        );
+                    }
                 } else {
-                    SendMessage(client, "Wrong Password");
+                    var topic = "issue";
+                    SendMessage(client, topic, "Wrong Password", "wrongpwd");
                 }
             } else {
-                SendMessage(client, "The room doesn't exist");
+                var topic = "issue";
+                SendMessage(client, topic, "The room doesn't exist", "rde");
             }
         }
-        // TODO: send Broadcast Message to all clients of the same room
+
+        //send Broadcast Message to all clients of the same room
         else if (dataJSON.topic == "BcMsg") {
             console.log("Client's Broadcast Message");
             console.log(dataJSON.BcMsg);
+            var topic = "BcMsg";
             rooms.forEach((room) => {
                 var index = room.getClients().indexOf(client);
-                PrintDebug1(index);
+                PrintDebug1(typeof index);
+                PrintDebug1("index of the message sender in the room array: " + index);
                 if (index != -1) {
                     room.getClients().forEach((c) => {
-                        SendMessage(c, dataJSON.BcMsg);
+                        SendMessage(c, topic, dataJSON.BcMsg);
                         PrintDebug1("Message sent");
                     });
                 }
@@ -149,7 +178,7 @@ function PrintDebug3(msg) {
     console.log(chalk.hex("#B22222")(`[DEBUG] ${msg}`));
 }
 
-function SendMessage(client, msg) {
-    var data = { sender: "server", msg: msg };
+function SendMessage(client, topic, msg, code = "") {
+    var data = { sender: "server", topic: topic, msg: msg, code: code };
     client.send(JSON.stringify(data));
 }
