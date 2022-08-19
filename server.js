@@ -134,7 +134,7 @@ wss.on("connection", function connection(client) {
                 PrintDebug1("index of the message sender in the room array: " + index);
                 if (index != -1) {
                     room.getClients().forEach((c) => {
-                        SendMessage(c, topic, dataJSON.BcMsg);
+                        SendMessage(c, topic, dataJSON.BcMsg, dataJSON.sender);
                         PrintDebug1("Message sent");
                     });
                 }
